@@ -1,0 +1,14 @@
+__pycache__/
+*.py[oc]
+.python-version
+build/
+dist/
+wheels/
+*.egg-info
+/postgres_data/
+.env
+/venv/
+.venv
+.idea/
+.vscode/
+reports/
