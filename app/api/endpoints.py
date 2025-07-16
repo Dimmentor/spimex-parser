@@ -16,7 +16,7 @@ async def download_reports(
 ) -> List[str]:
     try:
         downloader = ReportDownloader()
-        saved_files = downloader.download_and_save_reports(start_date, end_date)
+        saved_files = downloader.get_and_save_reports(start_date, end_date)
         return saved_files
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

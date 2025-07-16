@@ -67,9 +67,9 @@ class ReportParser:
             )
 
             df_result["exchange_product_id"] = df_result["exchange_product_id"].str.slice(0, 20)
-            df_result["oil_id"] = df_result["exchange_product_id"].str[:10]  # Обновлено с 4 до 10
-            df_result["delivery_basis_id"] = df_result["exchange_product_id"].str[4:14]  # Обновлено с 4:7
-            df_result["delivery_type_id"] = df_result["exchange_product_id"].str[-5:]  # Обновлено с -1
+            df_result["oil_id"] = df_result["exchange_product_id"].str[:10]
+            df_result["delivery_basis_id"] = df_result["exchange_product_id"].str[4:14]
+            df_result["delivery_type_id"] = df_result["exchange_product_id"].str[-5:]
             df_result["exchange_product_name"] = df_result["exchange_product_name"].str.slice(0, 1000)
             df_result["delivery_basis_name"] = df_result["delivery_basis_name"].str.slice(0, 500)
 

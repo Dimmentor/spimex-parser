@@ -90,10 +90,10 @@ class ReportDownloader:
                         return response.read()
                     logger.warning(f"HTTP {response.status} for {url}")
             except Exception as e:
-                logger.error(f"Attempt {attempt + 1} failed for {url}: {str(e)}")
+                logger.error(f"{attempt + 1} попыток завершились неудачей для {url}: {str(e)}")
                 time.sleep(delay * (attempt + 1))
 
-        logger.error(f"All attempts failed for {url}")
+        logger.error(f"Все попытки завершились неудачей для {url}")
         return None
 
     def get_all_bulletins(self, start_date: date, end_date: date) -> List[Tuple[str, date]]:
@@ -128,7 +128,7 @@ class ReportDownloader:
         logger.info(f"Всего найдено {len(all_links)} ссылок за {page - 1} страниц")
         return all_links
 
-    def download_and_save_reports(self, start_date: date, end_date: date) -> List[str]:
+    def get_and_save_reports(self, start_date: date, end_date: date) -> List[str]:
         try:
             reports = self.get_all_bulletins(start_date, end_date)
             if not reports:
@@ -164,5 +164,5 @@ class ReportDownloader:
             return saved_files
 
         except Exception as e:
-            logger.error(f"Ошибка в методе download_and_save_reports: {str(e)}")
+            logger.error(f"Ошибка в методе get_and_save_reports: {str(e)}")
             raise
