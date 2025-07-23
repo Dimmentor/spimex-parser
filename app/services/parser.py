@@ -3,8 +3,9 @@ from datetime import date
 from typing import Optional
 from pathlib import Path
 from ..models import SpimexTradingResult
-from ..database import SessionLocal
+from ..database import AsyncSessionLocal
 from ..utils.logger import logger
+import asyncio
 
 
 class ReportParser:
@@ -81,51 +82,52 @@ class ReportParser:
             logger.error(f"Error parsing file {file_path}: {e}")
             return None
 
-    def save_to_database(self, df: pd.DataFrame) -> int:
-        db = SessionLocal()
-        try:
-            df = df.where(pd.notnull(df), None)
+    async def save_to_database(self, df: pd.DataFrame) -> int:
+        async with AsyncSessionLocal() as session:
+            try:
+                df = df.where(pd.notnull(df), None)
+                records = []
+                for _, row in df.iterrows():
+                    record = {
+                        "exchange_product_id": str(row["exchange_product_id"])[:20] if row["exchange_product_id"] else None,
+                        "exchange_product_name": str(row["exchange_product_name"]) if row["exchange_product_name"] else None,
+                        "oil_id": str(row["oil_id"])[:10] if row["oil_id"] else None,
+                        "delivery_basis_id": str(row["delivery_basis_id"])[:10] if row["delivery_basis_id"] else None,
+                        "delivery_basis_name": str(row["delivery_basis_name"]) if row["delivery_basis_name"] else None,
+                        "delivery_type_id": str(row["delivery_type_id"])[:5] if row["delivery_type_id"] else None,
+                        "volume": float(row["volume"]) if pd.notnull(row["volume"]) else None,
+                        "total": float(row["total"]) if pd.notnull(row["total"]) else None,
+                        "count": int(row["count"]) if pd.notnull(row["count"]) else None,
+                        "date": row["date"],
+                    }
+                    records.append(record)
+                await session.run_sync(lambda sync_session: sync_session.bulk_insert_mappings(SpimexTradingResult, records))
+                await session.commit()
+                return len(records)
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Ошибка при сохранении в БД: {e}", exc_info=True)
+                return 0
 
-            records = []
-            for _, row in df.iterrows():
-                record = {
-                    "exchange_product_id": str(row["exchange_product_id"])[:20] if row["exchange_product_id"] else None,
-                    "exchange_product_name": str(row["exchange_product_name"]) if row[
-                        "exchange_product_name"] else None,
-                    "oil_id": str(row["oil_id"])[:10] if row["oil_id"] else None,
-                    "delivery_basis_id": str(row["delivery_basis_id"])[:10] if row["delivery_basis_id"] else None,
-                    "delivery_basis_name": str(row["delivery_basis_name"]) if row["delivery_basis_name"] else None,
-                    "delivery_type_id": str(row["delivery_type_id"])[:5] if row["delivery_type_id"] else None,
-                    "volume": float(row["volume"]) if pd.notnull(row["volume"]) else None,
-                    "total": float(row["total"]) if pd.notnull(row["total"]) else None,
-                    "count": int(row["count"]) if pd.notnull(row["count"]) else None,
-                    "date": row["date"],
-                }
-                records.append(record)
-
-            db.bulk_insert_mappings(SpimexTradingResult, records)  # оптимизация вместо insert
-            db.commit()
-            return len(records)
-        except Exception as e:
-            db.rollback()
-            logger.error(f"Ошибка при сохранении в БД: {e}", exc_info=True)
-            return 0
-        finally:
-            db.close()
-
-    def process_directory(self, directory: Path) -> int:
-        total_processed = 0
-        for file_path in directory.glob("*.xls"):
+    async def process_file(self, file_path: Path, semaphore: asyncio.Semaphore) -> int:
+        async with semaphore:
             try:
                 date_str = file_path.stem.split("_")[-1][:8]
                 report_date = date.fromisoformat(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}")
-
                 df = self.parse_xls_file(file_path, report_date)
                 if df is not None:
-                    count = self.save_to_database(df)
-                    total_processed += count
+                    count = await self.save_to_database(df)
                     logger.info(f"Обработан файл {file_path.name}, сохранено {count} записей")
+                    return count
             except Exception as e:
                 logger.error(f"Ошибка при обработке файла {file_path.name}: {e}")
+            return 0
 
-        return total_processed
+    async def process_directory(self, directory: Path, max_concurrent: int = 10) -> int:
+        semaphore = asyncio.Semaphore(max_concurrent)
+        tasks = [
+            self.process_file(file_path, semaphore)
+            for file_path in directory.glob("*.xls")
+        ]
+        results = await asyncio.gather(*tasks)
+        return sum(results)

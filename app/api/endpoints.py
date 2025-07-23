@@ -16,7 +16,7 @@ async def download_reports(
 ) -> List[str]:
     try:
         downloader = ReportDownloader()
-        saved_files = downloader.get_and_save_reports(start_date, end_date)
+        saved_files = await downloader.get_and_save_reports(start_date, end_date)
         return saved_files
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -27,7 +27,7 @@ async def process_reports() -> dict:
     try:
         parser = ReportParser()
         report_dir = Path(REPORTS_DIR)
-        count = parser.process_directory(report_dir)
+        count = await parser.process_directory(report_dir)
         return {
             "message": "Отчёты успешно обработаны",
             "records_processed": count
