@@ -7,11 +7,11 @@ UPD: Сервис переделан под асинхронность: испо
 
 PS: Итоговые метрики обновлены.
 
-# Скачивает бюллетени по итогам торгов с сайта биржи (https://spimex.com/markets/oil_products/trades/results/)
+* Скачивает бюллетени по итогам торгов с сайта биржи (https://spimex.com/markets/oil_products/trades/results/)
 
-# Записывает данные из отчётов в БД
+* Записывает данные из отчётов в БД
 
-# Проводит анализ торгов, кэширует в Redis, отдает в JSON-формате
+* Проводит анализ торгов, кэширует в Redis, отдает в JSON-формате
 
 <h3>Краткий гайд по установке:</h3>
 
@@ -48,7 +48,7 @@ POST /download-reports/?start_date=2023-01-01&end_date=2025-07-11
 POST /process-reports/
 ```
 
-# Далее эндпоинты в рамках практики по FastAPI
+<h3>Далее эндпоинты в рамках практики по FastAPI</h3>
 
 3) Список дат последних торговых дней
 
@@ -61,7 +61,7 @@ GET /trading/last-dates/
 или
 
 ```sh
-GET /trading/last-dates//?limit=20
+GET /trading/last-dates/?limit=20
 ```
 
 Пример ответа:
