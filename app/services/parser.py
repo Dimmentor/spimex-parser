@@ -89,8 +89,10 @@ class ReportParser:
                 records = []
                 for _, row in df.iterrows():
                     record = {
-                        "exchange_product_id": str(row["exchange_product_id"])[:20] if row["exchange_product_id"] else None,
-                        "exchange_product_name": str(row["exchange_product_name"]) if row["exchange_product_name"] else None,
+                        "exchange_product_id": str(row["exchange_product_id"])[:20] if row[
+                            "exchange_product_id"] else None,
+                        "exchange_product_name": str(row["exchange_product_name"]) if row[
+                            "exchange_product_name"] else None,
                         "oil_id": str(row["oil_id"])[:10] if row["oil_id"] else None,
                         "delivery_basis_id": str(row["delivery_basis_id"])[:10] if row["delivery_basis_id"] else None,
                         "delivery_basis_name": str(row["delivery_basis_name"]) if row["delivery_basis_name"] else None,
@@ -101,7 +103,8 @@ class ReportParser:
                         "date": row["date"],
                     }
                     records.append(record)
-                await session.run_sync(lambda sync_session: sync_session.bulk_insert_mappings(SpimexTradingResult, records))
+                await session.run_sync(
+                    lambda sync_session: sync_session.bulk_insert_mappings(SpimexTradingResult, records))
                 await session.commit()
                 return len(records)
             except Exception as e:
